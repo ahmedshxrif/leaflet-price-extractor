@@ -53,9 +53,26 @@ def _derive(norm_code: str) -> dict:
     }
 
 
-def clean() -> pd.DataFrame:
-    decrypt_if_needed(RAW)              # NASCA de-DRM on Windows; no-op on Mac
-    df = pd.read_excel(RAW)
+def _find_raw() -> Path:
+    """The Model List may arrive as .csv (decrypted via Excel Save-As on a
+    locked laptop) or .xlsx. Prefer whichever the app last saved."""
+    for name in ("Model List.csv", "Model List.xlsx"):
+        p = RAW.parent / name
+        if p.exists():
+            return p
+    return RAW
+
+
+def _read_raw(path: Path) -> pd.DataFrame:
+    if str(path).lower().endswith(".csv"):
+        return pd.read_csv(path)          # already plain text — nothing to decrypt
+    decrypt_if_needed(path)               # NASCA de-DRM on Windows; no-op elsewhere
+    return pd.read_excel(path)
+
+
+def clean(raw: Path | None = None) -> pd.DataFrame:
+    raw = raw or _find_raw()
+    df = _read_raw(raw)
     df.columns = [c.strip() for c in df.columns]
     n_raw = len(df)
 
@@ -164,12 +181,13 @@ def _report(df: pd.DataFrame, n_raw: int, n_dupes: int) -> None:
     print(f"codes with region tag: {int((df['region_suffix'] != '').sum())}")
 
 
-def build() -> int:
+def build(raw: Path | None = None) -> int:
     """Clean + alias the Model List -> master_clean.xlsx. Returns row count.
-    Callable from the app (browser) so no command line is needed on a host."""
-    if not RAW.exists():
-        raise FileNotFoundError(f"Missing Model List: {RAW}")
-    out = apply_aliases(clean())
+    Accepts .csv or .xlsx. Callable from the app (no command line needed)."""
+    raw = raw or _find_raw()
+    if not raw.exists():
+        raise FileNotFoundError(f"Missing Model List: {raw}")
+    out = apply_aliases(clean(raw))
     out.to_excel(OUT, index=False)
     return len(out)
 
