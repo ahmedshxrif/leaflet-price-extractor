@@ -4,6 +4,47 @@ Living log. Updated each session. Newest entry on top.
 
 ---
 
+## Session 25 — cloud deploy (Hugging Face) + NASCA decrypt integration
+
+**Why:** work laptop is locked (no Python/git installs) -> app must run in the
+browser. Chose HF Spaces after ruling out: local Windows (no installs),
+Cloudflare (wrong platform for heavy Python/OCR), free tiers (choke on
+PaddleOCR RAM). HF free now requires PRO for Docker/Streamlit anyway.
+
+**Deployed:** private Docker Space, cpu-basic (2 vCPU / 16 GB), PRO ($9/mo on
+PM's personal HF `ahmedshxrif`).
+URL: https://huggingface.co/spaces/ahmedshxrif/leaflet-price-extractor
+GitHub (public): https://github.com/ahmedshxrif/leaflet-price-extractor
+
+**Code changes for cloud + Windows:**
+- `src/decrypt.py` — NASCA de-DRM. Excel via entitled-Excel COM round-trip
+  (Windows only, from the PM's script); PDF via configurable
+  NASCA_PDF_DECRYPT_CMD (unset by default -> print-to-PDF is the PDF path,
+  since work laptop only has Reader/viewer). No-op on Mac/Linux. Wired into
+  run_batch (per PDF) + build_master (Model List).
+- Windows-compat: os.sysconf->ctypes RAM read, `nice` dropped on Windows +
+  BELOW_NORMAL priority, stop via flag file (output/batch.stop) not SIGINT,
+  ledger os.replace (atomic both OS). pywin32 in requirements (win marker).
+- In-app Model List loader (Dataset tab) + build_master.build() so the master
+  is built from the browser (no CLI on host). Setup-gate banner until loaded.
+- HF config: Dockerfile (libgl1/glib/gomp + deps), README front-matter
+  (sdk:docker, app_port:8501), .dockerignore.
+
+**Repo is PUBLIC now (PM decision — asserted data not restricted). Model List
+still excluded from repo; only bom_to_model.json + layout_profiles.json config
+travel.** Deployed via GitHub token + HF write token (both should be DELETED by
+PM post-deploy).
+
+**Operational caveats:**
+- HF ephemeral storage: master_raw.csv resets on Space rebuild/sleep. Workflow:
+  download master_raw.csv after a session, re-upload via Dataset 'merge master'
+  next time. (HF persistent storage = cheap add-on if it becomes a pain.)
+- PDF decryption on work laptop = print-to-PDF (Reader -> Microsoft Print to
+  PDF, Actual size). Only-Reader, no automatable trusted app. NASCA logo
+  watermark appears on printed PDFs — UNTESTED whether it hurts OCR (test one).
+
+**Next:** PM opens the Space, uploads Model List, runs a test leaflet; confirm
+the watermark doesn't break extraction; then backfill.
 ## Session 24 — NASCA RESOLVED; backfill data staged; manager doc
 
 - **PM: NASCA encryption issue is RESOLVED** — historical leaflet archive is
