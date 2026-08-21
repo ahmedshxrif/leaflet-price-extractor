@@ -164,9 +164,16 @@ def _report(df: pd.DataFrame, n_raw: int, n_dupes: int) -> None:
     print(f"codes with region tag: {int((df['region_suffix'] != '').sum())}")
 
 
-if __name__ == "__main__":
+def build() -> int:
+    """Clean + alias the Model List -> master_clean.xlsx. Returns row count.
+    Callable from the app (browser) so no command line is needed on a host."""
     if not RAW.exists():
-        raise SystemExit(f"Missing raw master: {RAW}")
+        raise FileNotFoundError(f"Missing Model List: {RAW}")
     out = apply_aliases(clean())
     out.to_excel(OUT, index=False)
-    print(f"\nwrote -> {OUT}  ({len(out)} rows, {len(out.columns)} columns)")
+    return len(out)
+
+
+if __name__ == "__main__":
+    n = build()
+    print(f"\nwrote -> {OUT}  ({n} rows)")

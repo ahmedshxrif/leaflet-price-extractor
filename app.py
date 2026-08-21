@@ -180,6 +180,31 @@ c3.metric("Leaflets done", n_done)
 c4.metric("Pending", n_pending)
 c5.metric("Failed", n_failed)
 
+# ---------------- setup gate: the model master must exist before any run ----
+MASTER_CLEAN = Path("data/master/master_clean.xlsx")
+RAW_MASTER = Path("data/master/Model List.xlsx")
+
+
+def load_model_list(uploaded_bytes: bytes) -> tuple[bool, str]:
+    """Save an uploaded Model List.xlsx and build the clean master from it."""
+    import importlib
+    RAW_MASTER.parent.mkdir(parents=True, exist_ok=True)
+    RAW_MASTER.write_bytes(uploaded_bytes)
+    try:
+        import build_master
+        importlib.reload(build_master)
+        n = build_master.build()
+        get_matcher.clear()              # drop any cached (empty) matcher
+        return True, f"master built — {n} rows"
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
+
+
+if not MASTER_CLEAN.exists():
+    st.warning("⚠️ **First step:** no model master loaded yet. Go to the "
+               "**📊 Dataset** tab → *Model List* and upload your `Model List.xlsx` "
+               "to enable extraction.")
+
 tab_batch, tab_single, tab_data, tab_review, tab_health = st.tabs(
     ["📦 Batch", "📄 Single leaflet", "📊 Dataset", "🔍 Review", "💛 Health"])
 
@@ -478,6 +503,21 @@ with tab_single:
 
 # ---------------- 📊 DATASET ----------------
 with tab_data:
+    st.subheader("Model List  ·  the matching source")
+    ok = MASTER_CLEAN.exists()
+    st.caption(("✅ model master loaded — extraction is enabled."
+                if ok else "❌ not loaded yet — upload your Model List.xlsx to enable extraction.")
+               + " (Encrypted .xlsx is decrypted automatically on Windows.)")
+    ml = st.file_uploader("Upload Model List.xlsx", type=["xlsx", "xlsm"],
+                          key="model_list_upload")
+    if ml and st.button("Build model master from this file", type="primary"):
+        with st.spinner("building master…"):
+            good, msg = load_model_list(ml.getvalue())
+        (st.success if good else st.error)(msg)
+        if good:
+            st.rerun()
+    st.divider()
+
     dcol, wcol = st.columns([2, 3], gap="large")
     with dcol:
         st.subheader("Master dataset")

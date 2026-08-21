@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+output/*
+!output/.gitkeep
+data/leaflets/*
+!data/leaflets/.gitkeep
+data/master/Model List.xlsx
+data/master/master_clean.xlsx
+scratch_render/

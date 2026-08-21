@@ -1,3 +1,13 @@
+---
+title: Leaflet Price Extractor
+emoji: 🧾
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8501
+pinned: false
+---
+
 # Leaflet Price Extractor
 
 Deterministic pipeline that extracts appliance pricing (REF/WM) from Gulf
