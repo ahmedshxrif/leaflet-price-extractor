@@ -1,0 +1,21 @@
+# --- environment / cruft ---
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+scratch_render/
+
+# --- leaflets: public but bulky, never in the repo ---
+data/leaflets/**
+!data/leaflets/.gitkeep
+
+# --- INTERNAL DATA: the model master stays OUT of the repo ---
+data/master/Model List.xlsx
+data/master/master_clean.xlsx
+# (config the app NEEDS is force-included below)
+!data/master/bom_to_model.json
+!data/master/layout_profiles.json
+
+# --- generated outputs, caches, logs, ledger ---
+output/**
+!output/.gitkeep

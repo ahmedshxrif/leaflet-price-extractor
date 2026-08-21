@@ -1,0 +1,20 @@
+# Stage 1 — text + coordinates
+pdfplumber>=0.11
+PyMuPDF>=1.24        # fallback / faster raster + text
+
+# Stage 2 — model-code matching
+rapidfuzz>=3.9
+
+# Stage 5/6 — join + Excel output
+pandas>=2.2
+openpyxl>=3.1
+
+# Stage 1 — OCR (all leaflets are image-based browser dumps)
+paddleocr>=3.7
+paddlepaddle>=3.3
+
+# Web UI
+streamlit>=1.59
+
+# Windows-only: NASCA Excel decryption via Excel COM (installs on Windows only)
+pywin32>=306; sys_platform == "win32"

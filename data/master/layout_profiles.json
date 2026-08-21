@@ -1,0 +1,49 @@
+{
+  "_doc": [
+    "Retailer layout profiles — DATA, not code. Lookup order for a leaflet:",
+    "  1. '<Retailer>/<Country>'  (country-specific override, e.g. 'Lulu/Kuwait')",
+    "  2. '<Retailer>'            (retailer default)",
+    "  3. DEFAULT                 (unknown -> manual first-page audit)",
+    "Fields: zoom (OCR render scale), price_position ('above'|'below' the model",
+    "code), notes (what 'correct' looks like), validated (audit trail: which",
+    "country+week+file this profile was last verified against).",
+    "Layouts CAN change week-over-week — every run writes a health record to",
+    "output/layout_health.jsonl and warns when the page stops matching the",
+    "profile. When that happens: audit the page, update this file, add a",
+    "validated entry."
+  ],
+  "profiles": {
+    "Carrefour": {
+      "zoom": 3.0,
+      "price_position": "above",
+      "notes": "Price cluster at tile TOP (promo + struck 'D'-glyph RRP + -NN% badge), image middle, spec line + code at bottom. %-badge cross-check active.",
+      "validated": [
+        {"country": "UAE", "week": "2026-W28", "file": "Temporary Printing Window_w28.pdf", "note": "p25 4/4 pixel-verified"}
+      ]
+    },
+    "Lulu": {
+      "zoom": 3.0,
+      "price_position": "above",
+      "notes": "Spec bullets at TOP, image, tabby/EMI financing line, struck was-price, red promo, name + code at bottom. No % badges (2-price pairs). Financing filtered via tabby/EMI markers.",
+      "validated": [
+        {"country": "UAE", "week": "2026-W29", "file": "Temporary Printing Window Lulu_w28.pdf", "note": "p41 5/5 pixel-verified"}
+      ]
+    },
+    "SharafDG": {
+      "zoom": 4.0,
+      "price_position": "above",
+      "notes": "Dense 2-col grid. THREE prices: struck WAS / bold NOW / black 'DG member' chip (member -> Other Offer Details). Capacity chips (number over LITRES). NOW garbles below 4x zoom; garble-rescue active.",
+      "validated": [
+        {"country": "UAE", "week": "2026-W28", "file": "Temporary Printing Window sharaf_w28.pdf", "note": "pp.9-10, 14 rows pixel-verified incl. 3 rescues"}
+      ]
+    },
+    "Emax": {
+      "zoom": 3.0,
+      "price_position": "below",
+      "notes": "Dark 3-col grid; brand/name/code at TOP, 'NET-607L' chip under code, image, prices at tile BOTTOM: glued 'WAS8999' + 'D8499' or 'D5499D5199' (now + card price). 'WORTH' freebie banners excluded.",
+      "validated": [
+        {"country": "UAE", "week": "2026-W28", "file": "UAE_EMAX_W28.pdf", "note": "p21 5 clean + 1 honest flag"}
+      ]
+    }
+  }
+}
