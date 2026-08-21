@@ -65,7 +65,15 @@ def _find_raw() -> Path:
 
 def _read_raw(path: Path) -> pd.DataFrame:
     if str(path).lower().endswith(".csv"):
-        return pd.read_csv(path)          # already plain text — nothing to decrypt
+        # Excel Save-As-CSV on Windows uses a legacy codepage, not UTF-8. Try
+        # the common ones; latin-1 maps every byte so it never raises (ASCII
+        # model codes/brands survive it exactly).
+        for enc in ("utf-8-sig", "cp1252", "cp1256", "latin-1"):
+            try:
+                return pd.read_csv(path, encoding=enc)
+            except UnicodeDecodeError:
+                continue
+        return pd.read_csv(path, encoding="latin-1")
     decrypt_if_needed(path)               # NASCA de-DRM on Windows; no-op elsewhere
     return pd.read_excel(path)
 
