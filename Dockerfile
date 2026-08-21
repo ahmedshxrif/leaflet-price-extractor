@@ -11,7 +11,12 @@ RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false \
+    STREAMLIT_SERVER_ENABLE_CORS=false \
+    STREAMLIT_SERVER_MAX_UPLOAD_SIZE=1000 \
+    STREAMLIT_SERVER_HEADLESS=true \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 WORKDIR /home/user/app
 
 COPY --chown=user requirements.txt .
@@ -23,4 +28,6 @@ RUN mkdir -p data/leaflets output data/master
 EXPOSE 8501
 CMD ["streamlit", "run", "app.py", \
      "--server.port=8501", "--server.address=0.0.0.0", \
-     "--server.headless=true"]
+     "--server.headless=true", \
+     "--server.enableXsrfProtection=false", \
+     "--server.enableCORS=false"]
