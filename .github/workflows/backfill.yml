@@ -57,12 +57,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Restore Model List (from secret) and build master
+      - name: Get Model List from release and build master
         env:
-          MODEL_LIST_CSV_B64: ${{ secrets.MODEL_LIST_CSV_B64 }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -e
           mkdir -p data/master
-          echo "$MODEL_LIST_CSV_B64" | base64 -d > "data/master/Model List.csv"
+          gh release download backfill-data --repo "$GITHUB_REPOSITORY" --pattern "Model List.csv" --dir data/master
           python src/build_master.py
 
       - name: Cache OCR tokens for this week
