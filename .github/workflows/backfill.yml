@@ -1,0 +1,143 @@
+name: Backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      weeks:
+        description: "Week folders to process (comma list, e.g. 2026-w19,2026-w20). Blank = all uploaded."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      weeks: ${{ steps.list.outputs.weeks }}
+    steps:
+      - name: List week zips in the 'backfill-data' release
+        id: list
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          req="${{ github.event.inputs.weeks }}"
+          if [ -n "$req" ]; then
+            weeks=$(echo "$req" | tr ',' '\n' | sed 's/[[:space:]]//g' | grep . | jq -R . | jq -sc .)
+          else
+            weeks=$(gh release view backfill-data --repo "$GITHUB_REPOSITORY" --json assets \
+              --jq '[.assets[].name | select(endswith(".zip")) | sub("\\.zip$";"")] | sort' )
+          fi
+          echo "weeks=$weeks" >> "$GITHUB_OUTPUT"
+          echo "will process: $weeks"
+
+  process:
+    needs: discover
+    if: needs.discover.outputs.weeks != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 15
+      matrix:
+        week: ${{ fromJson(needs.discover.outputs.weeks) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: System libs for PaddleOCR
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libgomp1
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Restore Model List (from secret) and build master
+        env:
+          MODEL_LIST_CSV_B64: ${{ secrets.MODEL_LIST_CSV_B64 }}
+        run: |
+          mkdir -p data/master
+          echo "$MODEL_LIST_CSV_B64" | base64 -d > "data/master/Model List.csv"
+          python src/build_master.py
+
+      - name: Cache OCR tokens for this week
+        uses: actions/cache@v4
+        with:
+          path: output/ocr
+          key: ocr-${{ matrix.week }}-v1
+
+      - name: Download this week's leaflets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir -p "data/leaflets/${{ matrix.week }}"
+          gh release download backfill-data --repo "$GITHUB_REPOSITORY" --pattern "${{ matrix.week }}.zip" --dir /tmp/dl
+          unzip -o -j "/tmp/dl/${{ matrix.week }}.zip" -d "data/leaflets/${{ matrix.week }}" "*.pdf"
+          echo "leaflets: $(ls data/leaflets/${{ matrix.week }} | wc -l)"
+
+      - name: Run extraction (16 GB runner -> can parallelise within the week)
+        run: python src/run_batch.py --week "${{ matrix.week }}" --year 2026 --jobs 2 --ocr-budget 4
+
+      - name: Upload this week's results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.week }}
+          path: |
+            output/Leaflet_Extraction_*.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    needs: process
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas openpyxl
+      - name: Collect all week results
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/results
+          pattern: results-*
+          merge-multiple: true
+      - name: Merge into master_raw.csv + weekly files
+        run: |
+          mkdir -p output
+          python - <<'PY'
+          import sys, glob, shutil
+          from pathlib import Path
+          sys.path.insert(0, "src")
+          from master_store import merge_csvs
+          # only the matched-SKU extract files (not _review / _out_of_scope)
+          extracts = [Path(p) for p in glob.glob("/tmp/results/Leaflet_Extraction_*.csv")
+                      if "_review" not in p and "_out_of_scope" not in p
+                      and "-W" not in Path(p).stem.split("Leaflet_Extraction_")[-1][:0]]
+          extracts = [p for p in extracts if "_review" not in p.name and "_out_of_scope" not in p.name]
+          s = merge_csvs(extracts)
+          print("merged:", s)
+          PY
+      - name: Commit results back to the repo (results/ folder)
+        run: |
+          mkdir -p results
+          cp output/master_raw.csv results/ 2>/dev/null || true
+          cp output/Leaflet_Extraction_*.csv results/ 2>/dev/null || true
+          git config user.name "backfill-bot"
+          git config user.email "backfill@users.noreply.github.com"
+          git add results
+          git commit -m "Backfill results ($(date -u +%Y-%m-%dT%H:%MZ))" || echo "nothing to commit"
+          git push
+      - name: Also upload the dataset as a downloadable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DATASET-master_raw
+          path: results/
+          retention-days: 30
