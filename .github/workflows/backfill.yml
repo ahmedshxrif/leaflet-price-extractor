@@ -37,6 +37,10 @@ jobs:
     needs: discover
     if: needs.discover.outputs.weeks != '[]'
     runs-on: ubuntu-latest
+    env:
+      # PaddlePaddle 3.x oneDNN path is broken on Intel CI runners
+      # (ConvertPirAttribute2RuntimeAttribute crash) -> disable oneDNN.
+      FLAGS_use_mkldnn: "0"
     strategy:
       fail-fast: false
       max-parallel: 15
