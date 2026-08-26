@@ -53,17 +53,31 @@ def get_ocr(fast: bool = False):
         use_doc_unwarping=False,
         use_textline_orientation=False,
         lang="en",
+        # Paddle's oneDNN path crashes on Intel CI runners
+        # ("ConvertPirAttribute2RuntimeAttribute not support" in
+        # onednn_instruction.cc) — every OCR call dies instantly. Plain CPU
+        # inference works everywhere, so force oneDNN off.
+        enable_mkldnn=False,
     )
+
+    def _make(**kw):
+        try:
+            return PaddleOCR(**kw)
+        except (TypeError, ValueError):
+            # installed PaddleOCR predates the enable_mkldnn kwarg
+            kw.pop("enable_mkldnn", None)
+            return PaddleOCR(**kw)
+
     if fast:
         if _OCR_FAST is None:
-            _OCR_FAST = PaddleOCR(
+            _OCR_FAST = _make(
                 text_detection_model_name="PP-OCRv5_mobile_det",
                 text_recognition_model_name="PP-OCRv5_mobile_rec",
                 **common,
             )
         return _OCR_FAST
     if _OCR is None:
-        _OCR = PaddleOCR(**common)
+        _OCR = _make(**common)
     return _OCR
 
 
