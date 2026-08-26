@@ -62,10 +62,11 @@ jobs:
 
       - name: Add swap (big page renders spike past runner RAM; OOM kills the VM)
         run: |
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          # runner image ships its own /swapfile -> use /mnt (bigger disk, empty)
+          sudo fallocate -l 8G /mnt/swapfile2 || sudo dd if=/dev/zero of=/mnt/swapfile2 bs=1M count=8192
+          sudo chmod 600 /mnt/swapfile2
+          sudo mkswap /mnt/swapfile2
+          sudo swapon /mnt/swapfile2
           free -h
 
       - name: Install deps
