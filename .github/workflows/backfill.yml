@@ -62,8 +62,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          mkdir -p data/master
-          gh release download backfill-data --repo "$GITHUB_REPOSITORY" --pattern "Model List.csv" --dir data/master
+          mkdir -p data/master /tmp/ml
+          # GitHub sanitises spaces in asset names -> "Model.List.csv"; match either
+          gh release download backfill-data --repo "$GITHUB_REPOSITORY" --pattern "Model*.csv" --dir /tmp/ml
+          cp /tmp/ml/*.csv "data/master/Model List.csv"
           python src/build_master.py
 
       - name: Cache OCR tokens for this week
@@ -114,15 +116,19 @@ jobs:
         run: |
           mkdir -p output
           python - <<'PY'
-          import sys, glob, shutil
+          import sys, glob, re
           from pathlib import Path
           sys.path.insert(0, "src")
           from master_store import merge_csvs
-          # only the matched-SKU extract files (not _review / _out_of_scope)
-          extracts = [Path(p) for p in glob.glob("/tmp/results/Leaflet_Extraction_*.csv")
-                      if "_review" not in p and "_out_of_scope" not in p
-                      and "-W" not in Path(p).stem.split("Leaflet_Extraction_")[-1][:0]]
-          extracts = [p for p in extracts if "_review" not in p.name and "_out_of_scope" not in p.name]
+          extracts = []
+          for p in glob.glob("/tmp/results/Leaflet_Extraction_*.csv"):
+              name = Path(p).name
+              if "_review" in name or "_out_of_scope" in name:
+                  continue
+              if re.fullmatch(r"Leaflet_Extraction_\d{4}-W\d{2}\.csv", name):
+                  continue   # skip per-week rollups; merge only per-leaflet extracts
+              extracts.append(Path(p))
+          print(f"merging {len(extracts)} per-leaflet extract files")
           s = merge_csvs(extracts)
           print("merged:", s)
           PY
