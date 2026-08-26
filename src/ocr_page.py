@@ -81,10 +81,22 @@ def get_ocr(fast: bool = False):
     return _OCR
 
 
+# Poster-sized pages (some Lulu leaflets are print-shop artwork, metres wide in
+# points) render to multi-GB images at profile zoom and the OCR matmul then
+# eats RAM+swap until the machine is killed. Cap the longest rendered side —
+# normal leaflet pages come nowhere near it and are unaffected.
+MAX_RENDER_SIDE_PX = 4500
+
+
 def render_page(pdf_path: Path, page_no: int, zoom: float) -> np.ndarray:
     """Render a 1-based page to an RGB numpy array at the given zoom."""
     doc = fitz.open(pdf_path)
-    pix = doc[page_no - 1].get_pixmap(matrix=fitz.Matrix(zoom, zoom))
+    page = doc[page_no - 1]
+    r = page.rect
+    long_side = max(r.width, r.height)
+    if long_side * zoom > MAX_RENDER_SIDE_PX:
+        zoom = MAX_RENDER_SIDE_PX / long_side
+    pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
     img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
     return img[:, :, :3].copy()
 
