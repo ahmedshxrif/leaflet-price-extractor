@@ -102,7 +102,7 @@ jobs:
           echo "leaflets: $(ls data/leaflets/${{ matrix.week }} | wc -l)"
 
       - name: Run extraction (16 GB runner -> can parallelise within the week)
-        run: python src/run_batch.py --week "${{ matrix.week }}" --year 2026 --jobs "${{ github.event.inputs.jobs || '2' }}" --ocr-budget 4
+        run: python src/run_batch.py --week "${{ matrix.week }}" --year 2026 --jobs "${{ github.event.inputs.jobs || '2' }}" --ocr-budget 2
 
       - name: Upload this week's results
         uses: actions/upload-artifact@v4
