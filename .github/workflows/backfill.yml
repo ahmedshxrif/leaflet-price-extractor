@@ -7,6 +7,10 @@ on:
         description: "Week folders to process (comma list, e.g. 2026-w19,2026-w20). Blank = all uploaded."
         required: false
         default: ""
+      jobs:
+        description: "Parallel OCR workers per week (drop to 1 if runners die out-of-memory)"
+        required: false
+        default: "2"
 
 permissions:
   contents: write
@@ -89,7 +93,7 @@ jobs:
           echo "leaflets: $(ls data/leaflets/${{ matrix.week }} | wc -l)"
 
       - name: Run extraction (16 GB runner -> can parallelise within the week)
-        run: python src/run_batch.py --week "${{ matrix.week }}" --year 2026 --jobs 2 --ocr-budget 4
+        run: python src/run_batch.py --week "${{ matrix.week }}" --year 2026 --jobs "${{ github.event.inputs.jobs || '2' }}" --ocr-budget 4
 
       - name: Upload this week's results
         uses: actions/upload-artifact@v4
