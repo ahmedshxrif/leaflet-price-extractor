@@ -1,0 +1,7 @@
+{
+  "_about": "Maps a code as printed on a leaflet to the code in your model list, for the cases where they differ. These two rows are examples.",
+  "bom_to_model": {
+    "RF650XAE": "RF650X",
+    "WM90QGU": "WM90Q"
+  }
+}
