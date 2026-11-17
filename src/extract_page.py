@@ -439,7 +439,7 @@ def find_capacity_near(code_tok: Token, tokens: list[Token],
             return
         # ANOTHER product's code between this spec line and our code means the
         # spec line belongs to that tile, not ours (stops the wide window from
-        # reaching into the tile above — the Samsung-shows-550L bug). Works in
+        # reaching into the tile above — the wrong-capacity bug). Works in
         # both directions (Emax chips sit BELOW the code).
         lo, hi = sorted((ty, cy))
         if any(lo + 15 < _center(o)[1] < hi - 15 and abs(_center(o)[0] - tx) < 500

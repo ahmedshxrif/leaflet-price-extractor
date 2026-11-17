@@ -6,7 +6,7 @@ ONCE here and everything downstream reads the cleaned output. Nothing in this
 file touches leaflets — it depends only on the master list.
 
 What it fixes (all observed in the raw file):
-  1. Brand casing      — 'Samsung' vs 'SAMSUNG', 'Bosch' vs 'BOSCH' (~50 brands).
+  1. Brand casing      — 'Acme' vs 'ACME', 'Bosch' vs 'BOSCH' (~50 brands).
   2. Sub-category casing— 'Washer'/'WASHER'/'washer', 'TMF'/'tmf', etc.
   3. Whitespace         — stray spaces in codes/labels.
   4. Duplicate rows     — identical (brand, category, subcat, code) kept once.
@@ -30,9 +30,6 @@ from pathlib import Path
 
 import pandas as pd
 
-import sys as _sys
-_sys.path.insert(0, 'src')
-from decrypt import decrypt_if_needed
 
 RAW = Path("data/master/Model List.xlsx")
 CROSSWALK = Path("data/master/bom_to_model.json")   # leaflet name -> BOM code
@@ -54,8 +51,7 @@ def _derive(norm_code: str) -> dict:
 
 
 def _find_raw() -> Path:
-    """The Model List may arrive as .csv (decrypted via Excel Save-As on a
-    locked laptop) or .xlsx. Prefer whichever the app last saved."""
+    """The Model List may arrive as .csv or .xlsx. Prefer whichever the app last saved."""
     for name in ("Model List.csv", "Model List.xlsx"):
         p = RAW.parent / name
         if p.exists():
@@ -74,7 +70,6 @@ def _read_raw(path: Path) -> pd.DataFrame:
             except UnicodeDecodeError:
                 continue
         return pd.read_csv(path, encoding="latin-1")
-    decrypt_if_needed(path)               # NASCA de-DRM on Windows; no-op elsewhere
     return pd.read_excel(path)
 
 

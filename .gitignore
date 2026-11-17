@@ -9,7 +9,7 @@ scratch_render/
 data/leaflets/**
 !data/leaflets/.gitkeep
 
-# --- INTERNAL DATA: the model master stays OUT of the repo ---
+# --- your model list stays out of the repo ---
 data/master/Model List.xlsx
 data/master/master_clean.xlsx
 # (config the app NEEDS is force-included below)

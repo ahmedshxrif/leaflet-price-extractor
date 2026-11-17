@@ -16,5 +16,3 @@ paddlepaddle>=3.3
 # Web UI
 streamlit>=1.59
 
-# Windows-only: NASCA Excel decryption via Excel COM (installs on Windows only)
-pywin32>=306; sys_platform == "win32"

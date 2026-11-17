@@ -88,7 +88,7 @@ def to_output_row(r: ExtractedRow, ctx: LeafletContext, dates: PromoDates,
         "Promo End Date": dates.end.strftime("%d/%m/%Y") if dates.end else "",
         "Promo Duration (days)": dates.duration_days or "",
         # master stores brands UPPERCASE; print short brands as-is (LG, TCL),
-        # title-case the rest (SAMSUNG -> Samsung, SUPER GENERAL -> Super General)
+        # title-case the rest (ACME -> Acme, SUPER GENERAL -> Super General)
         "Brand": (r.brand if len(r.brand) <= 3 else r.brand.title()) if r.brand else "",
         "Model Number": r.model_number,
         "Product Category": r.product_category,

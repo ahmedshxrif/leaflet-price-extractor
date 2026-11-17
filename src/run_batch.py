@@ -45,7 +45,6 @@ from pathlib import Path
 import fitz
 
 from country_config import resolve
-from decrypt import decrypt_if_needed
 from dates import parse_promo_dates
 from extract_page import extract
 from layout_health import assess
@@ -132,7 +131,6 @@ def cached_skim(pdf: Path, n_pages: int, matcher: Matcher,
 # ---------------- one leaflet ----------------
 def process_leaflet(pdf: Path, matcher: Matcher, year_hint: int | None,
                     inner_workers: int = 3) -> dict:
-    decrypt_if_needed(pdf)              # NASCA de-DRM on Windows; no-op on Mac
     ctx = resolve(pdf.name)
     if not ctx.ok:
         raise ValueError(f"filename does not resolve a country: {pdf.name!r} "

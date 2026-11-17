@@ -186,9 +186,7 @@ RAW_MASTER = Path("data/master/Model List.xlsx")
 
 
 def load_model_list(uploaded_bytes: bytes, filename: str) -> tuple[bool, str]:
-    """Save an uploaded Model List (.xlsx or .csv) and build the clean master.
-    On a locked laptop the file is exported to CSV (plain text) to sidestep
-    NASCA — the cloud can't decrypt .xlsx (no Excel on Linux)."""
+    """Save an uploaded Model List (.xlsx or .csv) and build the clean master."""
     import importlib
     RAW_MASTER.parent.mkdir(parents=True, exist_ok=True)
     # clear any prior raw so _find_raw picks the new one
@@ -514,12 +512,10 @@ with tab_data:
     ok = MASTER_CLEAN.exists()
     st.caption(("✅ model master loaded — extraction is enabled."
                 if ok else "❌ not loaded yet — upload your Model List.xlsx to enable extraction.")
-               + " (Encrypted .xlsx is decrypted automatically on Windows.)")
+               )
     ml = st.file_uploader("Upload Model List (.csv or .xlsx)",
                           type=["csv", "xlsx", "xlsm"], key="model_list_upload",
-                          help="On a NASCA-locked laptop: open the Model List in "
-                               "Excel, Save As CSV, and upload that CSV — the "
-                               "cloud can't decrypt .xlsx.")
+                          help="The list of model codes to match against, as .csv or .xlsx.")
     if ml and st.button("Build model master from this file", type="primary"):
         with st.spinner("building master…"):
             good, msg = load_model_list(ml.getvalue(), ml.name)

@@ -144,7 +144,7 @@ if __name__ == "__main__":
     # real values read off page 25 (AED, 2dp)
     cases = [
         ("LG fridge  2099  2999  -31%", 2),      # promo/rrp/pct all present, should agree
-        ("Samsung  1699  2149  -21%", 2),        # 2149*0.79=1698 -> agree
+        ("BrandA  1699  2149  -21%", 2),        # 2149*0.79=1698 -> agree
         ("Hitachi  2599  3499  -26%", 2),        # 3499*0.74=2589 ~ 2599 -> agree
         ("SUPER DEAL 79.99", 2),                 # single grocery price
         ("bogus 100 500 -5%", 2),                # 500*0.95=475 != 100 -> mismatch flag
